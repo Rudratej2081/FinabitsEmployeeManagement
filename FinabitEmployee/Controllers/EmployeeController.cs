@@ -26,54 +26,7 @@ namespace FinabitEmployee.Controllers
             _configuration = configuration;
             _context = appDb;
         }
-        //[HttpPut("update")]
-        //[Authorize(Roles ="User")] 
-        //public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployeeDTO model)
-        //{
-
-        //    var email = User.FindFirstValue(ClaimTypes.Email);
-            
-        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        //    if (user == null)
-        //    {
-        //        return NotFound("Employee not found.");
-        //    }
-
-
-        //    if (!string.IsNullOrEmpty(model.FirstName))
-        //    {
-        //        user.FirstName = model.FirstName;
-        //    }
-        //    if (!string.IsNullOrEmpty(model.Email))
-        //    {
-        //        user.Email = model.Email;
-        //        user.UserName = model.Email;
-        //    }
-        //    if (!string.IsNullOrEmpty(model.LastName))
-        //    {
-        //        user.LastName = model.LastName;
-        //    }
-
-        //    if (!string.IsNullOrEmpty(model.Phone))
-        //    {
-        //        user.Phone = model.Phone;
-        //    }
-           
-
-        //    var result = await _userManager.UpdateAsync(user);
-
-        //    if (result.Succeeded)
-        //    {
-        //        return Ok(new { message = "Employee details updated successfully." });
-        //    }
-
-        //    foreach (var error in result.Errors)
-        //    {
-        //        ModelState.AddModelError(string.Empty, error.Description);
-        //    }
-
-        //    return BadRequest(ModelState);
-        //}
+        
         [HttpPost("apply")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> ApplyForLeave([FromBody] LeaveRequestDto leaveRequestDto)
