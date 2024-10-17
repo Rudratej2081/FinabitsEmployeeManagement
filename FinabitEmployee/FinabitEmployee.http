@@ -1,0 +1,6 @@
+@FinabitEmployee_HostAddress = http://localhost:5274
+
+GET {{FinabitEmployee_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
