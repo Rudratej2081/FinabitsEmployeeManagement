@@ -235,49 +235,46 @@ public class AdminController : ControllerBase
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    [HttpPut("employee-update")]
+    [HttpPut("UpdateDeatilsPhoto")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployeeDTO model)
+    public async Task<IActionResult> UpdateEmployee([FromForm] UpdateEmployeeDTO model)
     {
-
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var user = await _userManager.FindByIdAsync(userId);
-
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
         {
             return NotFound("Employee not found.");
         }
 
+        // Update user details
+        if (!string.IsNullOrEmpty(model.FirstName)) user.FirstName = model.FirstName;
+        if (!string.IsNullOrEmpty(model.LastName)) user.LastName = model.LastName;
+        if (!string.IsNullOrEmpty(model.Email)) user.Email = model.Email;
+        if (!string.IsNullOrEmpty(model.Phone)) user.Phone = model.Phone;
+        if (!string.IsNullOrEmpty(model.Designation)) user.Designation = model.Designation;
 
-        if (!string.IsNullOrEmpty(model.FirstName))
+        // Handle profile picture if provided
+        if (model.ProfilePicture != null && model.ProfilePicture.Length > 0)
         {
-            user.FirstName = model.FirstName;
-        }
+            if (!string.IsNullOrEmpty(user.ProfilePicturePath))
+            {
+                var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfilePicturePath);
+                if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
+            }
 
-        if (!string.IsNullOrEmpty(model.LastName))
-        {
-            user.LastName = model.LastName;
-        }
-        if (!string.IsNullOrEmpty(model.Email))
-        {
-            user.Email = model.Email;
-        }
+            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.ProfilePicture.FileName)}";
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", uniqueFileName);
 
-        if (!string.IsNullOrEmpty(model.Phone))
-        {
-            user.Phone = model.Phone;
-        }
-        if (!string.IsNullOrEmpty(model.Designation))
-        {
-            user.Designation = model.Designation;
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await model.ProfilePicture.CopyToAsync(stream);
+            }
+
+            user.ProfilePicturePath = $"uploads/{uniqueFileName}";
         }
 
         var result = await _userManager.UpdateAsync(user);
-
-        if (result.Succeeded)
-        {
-            return Ok(new { message = "Employee details updated successfully." });
-        }
+        if (result.Succeeded) return Ok(new { message = "Employee details and profile picture updated successfully." });
 
         foreach (var error in result.Errors)
         {
@@ -286,6 +283,7 @@ public class AdminController : ControllerBase
 
         return BadRequest(ModelState);
     }
+
 
     [HttpGet("leaves")]
     [Authorize(Roles = "Admin")]
