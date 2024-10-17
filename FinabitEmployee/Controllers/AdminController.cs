@@ -287,7 +287,11 @@ public class AdminController : ControllerBase
 
     [HttpGet("leaves")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAllLeaveRequests(string employeeName = null, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<IActionResult> GetAllLeaveRequests(
+    string employeeName = null,
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    LeaveStatus? status = null) // Add status parameter
     {
         // Start with the queryable data from the LeaveRequests table and join with the AspNetUsers table
         var query = _context.LeaveRequests
@@ -312,7 +316,7 @@ public class AdminController : ControllerBase
         {
             // Convert both employeeName and EmployeeName to lowercase for case-insensitive comparison
             employeeName = employeeName.ToLower();
-            query = query.Where(leave => (leave.EmployeeName.ToLower()).Contains(employeeName));
+            query = query.Where(leave => leave.EmployeeName.ToLower().Contains(employeeName));
         }
 
         // Filter by start date if provided
@@ -325,6 +329,12 @@ public class AdminController : ControllerBase
         if (endDate.HasValue)
         {
             query = query.Where(leave => leave.EndDate <= endDate.Value);
+        }
+
+        // Filter by status if provided
+        if (status.HasValue)
+        {
+            query = query.Where(leave => leave.Status == status.Value);
         }
 
         // Execute the query and get the list of leave requests
