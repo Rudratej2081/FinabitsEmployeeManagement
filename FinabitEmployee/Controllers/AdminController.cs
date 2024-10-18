@@ -238,7 +238,7 @@ public class AdminController : ControllerBase
     [HttpPut("UpdateDeatilsPhoto")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateEmployee([FromForm] UpdateEmployeeDTO model)
-    {
+    {   
         var email = User.FindFirstValue(ClaimTypes.Email);
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
