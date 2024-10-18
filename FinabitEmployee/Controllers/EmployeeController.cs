@@ -234,7 +234,112 @@ namespace FinabitEmployee.Controllers
 
             return BadRequest(ModelState);
         }
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateActivity([FromBody] DailyActivity dailyActivity)
+        {
+            // Get the logged-in user's ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized("User ID not found.");
+            }
+
+            // Set the user ID in the activity
+            dailyActivity.UserId = userId;
+            dailyActivity.Date = DateTime.Now;
+
+            // Add and save the activity
+            _context.DailyActivities.Add(dailyActivity);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Daily activity created successfully." });
+        }
+        [Authorize]
+        [HttpPost("daily-activity")]
+        public async Task<IActionResult> LogDailyActivity([FromBody] DailyActivity activityDto)
+        {
+            // Get the logged-in user's ID from the claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized("User ID not found.");
+            }
+
+            // Create a new activity log entry
+            var activityLog = new DailyActivity
+            {
+                UserId = userId,
+                Description = activityDto.Description,
+                Date = DateTime.UtcNow
+            };
+
+            // Save the activity to the database
+            _context.DailyActivities.Add(activityLog);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Daily activity logged successfully." });
+        }
 
 
+        [Authorize(Roles ="User")]       
+        [HttpPut("updateactivity")]
+        public async Task<IActionResult> UpdateActivity([FromBody] DailyActivity updatedActivity)
+        {
+            // Get the logged-in user's ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized("User ID not found.");
+            }
+
+            // Find the activity by ID
+            var activity = await _context.DailyActivities.FindAsync(userId);
+
+            if (activity == null || activity.UserId != userId)
+            {
+                return NotFound("Activity not found or not owned by the user.");
+            }
+
+            // Update activity fields
+            activity.Description = updatedActivity.Description;
+            activity.HoursWorked = updatedActivity.HoursWorked;
+            activity.Date = DateTime.Now;
+
+            _context.DailyActivities.Update(activity);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Activity updated successfully." });
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpDelete("deleteactivity")]
+        public async Task<IActionResult> DeleteActivity()
+        {
+       
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized("User ID not found.");
+            }
+
+         
+            var activity = await _context.DailyActivities.FindAsync(userId);
+
+            if (activity == null || activity.UserId != userId)
+            {
+                return NotFound("Activity not found or not owned by the user.");
+            }
+
+            _context.DailyActivities.Remove(activity);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Activity deleted successfully." });
+        }
     }
+
 }
+

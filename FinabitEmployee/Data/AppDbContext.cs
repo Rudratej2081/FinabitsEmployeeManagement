@@ -12,6 +12,7 @@ namespace firstproj.Models.Entity
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<CheckInOutRecord> checkincheckouts { get; set; }
+        public DbSet<DailyActivity> DailyActivities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
