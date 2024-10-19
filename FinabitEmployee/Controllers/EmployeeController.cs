@@ -142,19 +142,19 @@ namespace FinabitEmployee.Controllers
             {
                 if (!string.IsNullOrEmpty(user.ProfilePicturePath))
                 {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfilePicturePath);
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee", user.ProfilePicturePath);
                     if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
                 }
 
                 var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.ProfilePicture.FileName)}";
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", uniqueFileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee", uniqueFileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await model.ProfilePicture.CopyToAsync(stream);
                 }
 
-                user.ProfilePicturePath = $"uploads/{uniqueFileName}";
+                user.ProfilePicturePath = $"{uniqueFileName}";
             }
 
             var result = await _userManager.UpdateAsync(user);
@@ -196,7 +196,7 @@ namespace FinabitEmployee.Controllers
             }
 
             // Construct the path to the existing profile picture
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfilePicturePath);
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee", user.ProfilePicturePath);
 
             // Attempt to delete the profile picture file
             if (System.IO.File.Exists(filePath))
@@ -234,33 +234,16 @@ namespace FinabitEmployee.Controllers
 
             return BadRequest(ModelState);
         }
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateActivity([FromBody] DailyActivity dailyActivity)
-        {
-            // Get the logged-in user's ID
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (userId == null)
-            {
-                return Unauthorized("User ID not found.");
-            }
-
-            // Set the user ID in the activity
-            dailyActivity.UserId = userId;
-            dailyActivity.Date = DateTime.Now;
-
-            // Add and save the activity
-            _context.DailyActivities.Add(dailyActivity);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Daily activity created successfully." });
-        }
-        [Authorize]
+       
+        [Authorize(Roles = "User")]
         [HttpPost("daily-activity")]
-        public async Task<IActionResult> LogDailyActivity([FromBody] DailyActivity activityDto)
+        public async Task<IActionResult> LogDailyActivity([FromBody] DailyActivityDto activityDto)
         {
+       
             // Get the logged-in user's ID from the claims
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByEmailAsync(email);
+            var userId = user.Id;
 
             if (userId == null)
             {
@@ -272,6 +255,7 @@ namespace FinabitEmployee.Controllers
             {
                 UserId = userId,
                 Description = activityDto.Description,
+                HoursWorked=activityDto.HoursWorked,
                 Date = DateTime.UtcNow
             };
 
@@ -284,11 +268,19 @@ namespace FinabitEmployee.Controllers
 
 
         [Authorize(Roles ="User")]       
-        [HttpPut("updateactivity")]
-        public async Task<IActionResult> UpdateActivity([FromBody] DailyActivity updatedActivity)
+        [HttpPut("updateactivity{id}")]
+        public async Task<IActionResult> UpdateActivity(int id,[FromBody] DailyActivityDto updatedActivity)
         {
             // Get the logged-in user's ID
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByEmailAsync(email);
+            var userId = new DailyActivity
+            {
+                Id= id,
+                UserId = user.Id,
+                
+            };
+            
 
             if (userId == null)
             {
@@ -296,9 +288,10 @@ namespace FinabitEmployee.Controllers
             }
 
             // Find the activity by ID
-            var activity = await _context.DailyActivities.FindAsync(userId);
+            var activity = await _context.DailyActivities.FindAsync(id);
 
-            if (activity == null || activity.UserId != userId)
+
+            if (activity == null)
             {
                 return NotFound("Activity not found or not owned by the user.");
             }
@@ -315,11 +308,13 @@ namespace FinabitEmployee.Controllers
         }
 
         [Authorize(Roles = "User")]
-        [HttpDelete("deleteactivity")]
-        public async Task<IActionResult> DeleteActivity()
+        [HttpDelete("deleteactivity{id}")]
+        public async Task<IActionResult> DeleteActivity(int id)
         {
-       
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByEmailAsync(email);
+            var userId = user.Id;
 
             if (userId == null)
             {
@@ -327,7 +322,7 @@ namespace FinabitEmployee.Controllers
             }
 
          
-            var activity = await _context.DailyActivities.FindAsync(userId);
+            var activity = await _context.DailyActivities.FindAsync(id);
 
             if (activity == null || activity.UserId != userId)
             {

@@ -9,6 +9,12 @@ namespace FinabitEmployee.Data
         public string UserId { get; set; }  
         public DateTime Date { get; set; }  
         public string Description { get; set; }  
-        public int HoursWorked { get; set; }
+        public string HoursWorked { get; set; }
+    }
+    public class DailyActivityDto
+    {
+        public string Description { get; set; }
+        public string HoursWorked { get; set; }
+        
     }
 }
