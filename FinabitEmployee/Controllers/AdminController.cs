@@ -56,12 +56,12 @@ public class AdminController : ControllerBase
         {
             // Generate a unique file name to avoid conflicts
             var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.ProfilePicture.FileName)}";
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", uniqueFileName);
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee", uniqueFileName);
 
             // Ensure the "uploads" folder exists
-            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads")))
+            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee")))
             {
-                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads"));
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "C:\\FinabitsEmployee"));
             }
 
             // Save the profile picture to the file system
