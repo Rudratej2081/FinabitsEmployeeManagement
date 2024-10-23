@@ -347,40 +347,72 @@ public class AdminController : ControllerBase
     }
 
 
-
-
-
     [HttpPost("leave-status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateLeaveStatus([FromBody] UpdateLeaveStatusDto model)
     {
-        
         if (model == null || model.Id <= 0)
         {
             return BadRequest("Invalid leave request details.");
         }
 
-       
+        // Find the leave request
         var leaveRequest = await _context.LeaveRequests.FindAsync(model.Id);
         if (leaveRequest == null)
         {
             return NotFound("Leave request not found.");
         }
 
-    
+        // Check if the provided status is valid
         if (model.Status != LeaveStatus.Approved && model.Status != LeaveStatus.Rejected)
         {
             return BadRequest("Invalid status provided. Only 'Approved' or 'Rejected' are allowed.");
         }
 
-
+        // Update the leave request status
         leaveRequest.Status = model.Status;
+
+        // If the status is Approved, mark the user as absent for the leave period
+        if (model.Status == LeaveStatus.Approved)
+        {
+            var currentDate = leaveRequest.StartDate.Date;
+            var endDate = leaveRequest.EndDate.Date;
+
+            // Loop through each day in the leave period
+            while (currentDate <= endDate)
+            {
+                // Check if attendance record already exists for the date
+                var existingAttendance = await _context.AttendanceRecords
+                    .FirstOrDefaultAsync(ar => ar.UserId == leaveRequest.userId && ar.Date == currentDate);
+
+                if (existingAttendance == null)
+                {
+                    // Create a new attendance record marking the user as absent
+                    var attendanceRecord = new Attendance
+                    {
+                        UserId = leaveRequest.userId,
+                        Date = currentDate,
+                        IsPresent = false,
+                        IsAbsent = true,
+                        ConsecutiveMismatches = 0 // Adjust if necessary
+                    };
+
+                    _context.AttendanceRecords.Add(attendanceRecord);
+                }
+
+                // Move to the next day
+                currentDate = currentDate.AddDays(1);
+            }
+        }
+
+        // Save the updated leave request and attendance records
         _context.LeaveRequests.Update(leaveRequest);
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Leave request status updated successfully." });
     }
-    
+
+
 
 }
 

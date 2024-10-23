@@ -1,4 +1,6 @@
-﻿using FinabitEmployee.Data;
+﻿using Emgu.CV.Features2D;
+using Emgu.CV.Ocl;
+using FinabitEmployee.Data;
 using FinabitEmployee.Models;
 using firstproj.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
@@ -28,44 +30,45 @@ namespace FinabitEmployee.Controllers
             _context = appDb;
             _faceRecognitionService = new FaceRecognitionService();
         }
-        
-        [HttpPost("apply")]
+
+        [HttpPost("LeaveApply")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> ApplyForLeave([FromBody] LeaveRequestDto leaveRequestDto)
         {
+            // Get the user's email from claims
             var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByEmailAsync(email);
-            var userId = user.Id;
 
+            // Validate the leave request data
             if (leaveRequestDto == null)
             {
                 return BadRequest("Invalid leave request data.");
             }
 
-
-
-            if (email == null)
+            // Check if the user exists
+            if (user == null)
             {
                 return NotFound("User not found.");
             }
 
-
+            // Create a new leave request with 'Pending' status
             var leaveRequest = new LeaveRequest
             {
-                userId = userId,
+                userId = user.Id,
                 StartDate = leaveRequestDto.StartDate,
                 EndDate = leaveRequestDto.EndDate,
                 Reason = leaveRequestDto.Reason,
-                Status = LeaveStatus.Pending,
+                Status = LeaveStatus.Pending, // Initially set to Pending
                 CreatedAt = DateTime.UtcNow
             };
 
-
+            // Save the leave request in the database
             _context.LeaveRequests.Add(leaveRequest);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Leave request submitted successfully and is pending approval." });
         }
+
 
         [HttpPost("checkin")]
         [Authorize(Roles = "User")]
@@ -83,7 +86,7 @@ namespace FinabitEmployee.Controllers
 
             var checkInRecord = new CheckInOutRecord
             {
-               UserId=userId,
+                UserId = userId,
                 CheckInTime = DateTime.UtcNow
             };
 
@@ -177,7 +180,7 @@ namespace FinabitEmployee.Controllers
         {
             // Get the logged-in user's ID from claims
             var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
+
 
             if (string.IsNullOrEmpty(email))
             {
@@ -236,12 +239,12 @@ namespace FinabitEmployee.Controllers
 
             return BadRequest(ModelState);
         }
-       
+
         [Authorize(Roles = "User")]
         [HttpPost("daily-activity")]
         public async Task<IActionResult> LogDailyActivity([FromBody] DailyActivityDto activityDto)
         {
-       
+
             // Get the logged-in user's ID from the claims
             var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByEmailAsync(email);
@@ -257,7 +260,7 @@ namespace FinabitEmployee.Controllers
             {
                 UserId = userId,
                 Description = activityDto.Description,
-                HoursWorked=activityDto.HoursWorked,
+                HoursWorked = activityDto.HoursWorked,
                 Date = DateTime.UtcNow
             };
 
@@ -269,20 +272,20 @@ namespace FinabitEmployee.Controllers
         }
 
 
-        [Authorize(Roles ="User")]       
+        [Authorize(Roles = "User")]
         [HttpPut("updateactivity{id}")]
-        public async Task<IActionResult> UpdateActivity(int id,[FromBody] DailyActivityDto updatedActivity)
+        public async Task<IActionResult> UpdateActivity(int id, [FromBody] DailyActivityDto updatedActivity)
         {
             // Get the logged-in user's ID
             var email = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByEmailAsync(email);
             var userId = new DailyActivity
             {
-                Id= id,
+                Id = id,
                 UserId = user.Id,
-                
+
             };
-            
+
 
             if (userId == null)
             {
@@ -323,7 +326,7 @@ namespace FinabitEmployee.Controllers
                 return Unauthorized("User ID not found.");
             }
 
-         
+
             var activity = await _context.DailyActivities.FindAsync(id);
 
             if (activity == null || activity.UserId != userId)
@@ -336,53 +339,6 @@ namespace FinabitEmployee.Controllers
 
             return Ok(new { message = "Activity deleted successfully." });
         }
-        //[HttpPost("compare")]
-        //[Authorize(Roles = "User")]
-        //public async Task<IActionResult> CompareFaces([FromBody] CompareRequest request)
-        //{
-        //    // Get the user's email from claims
-        //    var email = User.FindFirstValue(ClaimTypes.Email);
-
-        //    // Find the user by email
-        //    var user = await _userManager.FindByEmailAsync(email);
-
-        //    if (user == null)
-        //    {
-        //        return Unauthorized("Unable to find the user.");
-        //    }
-
-        //    // Define the folder where profile pictures are saved
-        //    var profileImagePath = Path.Combine(@"C:\FinabitsEmployee", user.ProfilePicturePath);
-
-        //    // Check if the profile image exists
-        //    if (!System.IO.File.Exists(profileImagePath))
-        //    {
-        //        return NotFound("Profile image not found.");
-        //    }
-
-        //    // Decode the base64 image
-        //    var base64Image = request.Image.Replace("data:image/jpeg;base64,", ""); // Adjust this if your image type is different
-        //    var webcamImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".jpg");
-
-        //    // Save the decoded image to a file
-        //    System.IO.File.WriteAllBytes(webcamImagePath, Convert.FromBase64String(base64Image));
-
-        //    // Compare the two images: profile image and webcam image
-        //    var result = _faceRecognitionService.CompareFaces(profileImagePath, webcamImagePath);
-
-        //    // Clean up the temporary file after comparison
-        //    System.IO.File.Delete(webcamImagePath);
-
-        //    if (result)
-        //    {
-        //        return Ok(new { message = "Faces match." });
-        //    }
-
-        //    return BadRequest(new { message = "Faces does not match." });
-        //}
-
-        // Define a class to receive the compare request
-
 
         [HttpPost("attendance")]
         [Authorize(Roles = "User")]
@@ -407,10 +363,10 @@ namespace FinabitEmployee.Controllers
 
             // Determine if the face match was successful
             bool isFaceMatched = compareResponse is OkObjectResult; // Check if the response was OK
-           
+
             if (existingRecord != null)
             {
-                
+
                 // Update existing record
                 if (isFaceMatched)
                 {
@@ -453,10 +409,10 @@ namespace FinabitEmployee.Controllers
                 await _context.AttendanceRecords.AddAsync(newRecord);
             }
 
-           
-                await _context.SaveChangesAsync();
-            
-           
+
+            await _context.SaveChangesAsync();
+
+
 
             return Ok(new { message = "Attendance updated successfully." });
         }
@@ -515,6 +471,5 @@ namespace FinabitEmployee.Controllers
         }
 
     }
-
 }
 
