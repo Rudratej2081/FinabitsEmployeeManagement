@@ -1,5 +1,3 @@
-//using DataContext.Data;
-//using FinabitEmployee.Data;
 using FinabitEmployee.Models;
 using firstproj.Models.Entity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
@@ -32,7 +30,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
-
 
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(options =>
@@ -60,7 +57,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
-
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -71,34 +67,36 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
-{
     {
-        new OpenApiSecurityScheme
         {
-            Reference = new OpenApiReference
+            new OpenApiSecurityScheme
             {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        },
-        new string[] {}
-    }
-});
-});
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 
-
-//builder.Services.AddAuthorization(options =>
-//{
-//    options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
-//    options.AddPolicy("UserPolicy", policy => policy.RequireRole("User"));
-//});
+    
+});
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 // Add AdminInitializer to the services
 builder.Services.AddTransient<AdminInitializer>();
 
 var app = builder.Build();
-
-// Configure middleware for the HTTP request pipeline
 
 // Initialize admin user during application startup
 using (var scope = app.Services.CreateScope())
@@ -109,7 +107,6 @@ using (var scope = app.Services.CreateScope())
     var adminEmail = builder.Configuration["AdminSettings:Email"];
     var adminPassword = builder.Configuration["AdminSettings:Password"];
 
-
     if (!string.IsNullOrEmpty(adminEmail) && !string.IsNullOrEmpty(adminPassword))
     {
         await adminInitializer.InitializeAdminAsync(adminEmail, adminPassword);
@@ -119,15 +116,35 @@ using (var scope = app.Services.CreateScope())
         throw new InvalidOperationException("Admin user email or password is not configured properly.");
     }
 }
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseCors("AllowAllOrigins");
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
-    //c.RoutePrefix = string.Empty;  
 });
 
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+
+app.MapControllers(); // Map your API controllers
+app.MapFallbackToFile("index.html"); // Serve the HTML page
+
 app.Run();

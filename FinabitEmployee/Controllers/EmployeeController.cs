@@ -18,6 +18,7 @@ namespace FinabitEmployee.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
+        private readonly FaceRecognitionService _faceRecognitionService;
 
         public EmployeeController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, AppDbContext appDb)
         {
@@ -25,6 +26,7 @@ namespace FinabitEmployee.Controllers
             _roleManager = roleManager;
             _configuration = configuration;
             _context = appDb;
+            _faceRecognitionService = new FaceRecognitionService();
         }
         
         [HttpPost("apply")]
@@ -334,6 +336,184 @@ namespace FinabitEmployee.Controllers
 
             return Ok(new { message = "Activity deleted successfully." });
         }
+        //[HttpPost("compare")]
+        //[Authorize(Roles = "User")]
+        //public async Task<IActionResult> CompareFaces([FromBody] CompareRequest request)
+        //{
+        //    // Get the user's email from claims
+        //    var email = User.FindFirstValue(ClaimTypes.Email);
+
+        //    // Find the user by email
+        //    var user = await _userManager.FindByEmailAsync(email);
+
+        //    if (user == null)
+        //    {
+        //        return Unauthorized("Unable to find the user.");
+        //    }
+
+        //    // Define the folder where profile pictures are saved
+        //    var profileImagePath = Path.Combine(@"C:\FinabitsEmployee", user.ProfilePicturePath);
+
+        //    // Check if the profile image exists
+        //    if (!System.IO.File.Exists(profileImagePath))
+        //    {
+        //        return NotFound("Profile image not found.");
+        //    }
+
+        //    // Decode the base64 image
+        //    var base64Image = request.Image.Replace("data:image/jpeg;base64,", ""); // Adjust this if your image type is different
+        //    var webcamImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".jpg");
+
+        //    // Save the decoded image to a file
+        //    System.IO.File.WriteAllBytes(webcamImagePath, Convert.FromBase64String(base64Image));
+
+        //    // Compare the two images: profile image and webcam image
+        //    var result = _faceRecognitionService.CompareFaces(profileImagePath, webcamImagePath);
+
+        //    // Clean up the temporary file after comparison
+        //    System.IO.File.Delete(webcamImagePath);
+
+        //    if (result)
+        //    {
+        //        return Ok(new { message = "Faces match." });
+        //    }
+
+        //    return BadRequest(new { message = "Faces does not match." });
+        //}
+
+        // Define a class to receive the compare request
+
+
+        [HttpPost("attendance")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> UpdateAttendance([FromBody] CompareRequest request)
+        {
+            // Get the user's email from claims
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var user = await _userManager.FindByEmailAsync(email);
+
+            // Check if the user exists
+            if (user == null)
+            {
+                return Unauthorized("Unable to find the user.");
+            }
+
+            var today = DateTime.UtcNow.Date; // Get today's date
+            var existingRecord = await _context.AttendanceRecords
+                .FirstOrDefaultAsync(ar => ar.UserId == user.Id && ar.Date == today);
+
+            // Call the CompareFaces method to check face match
+            var compareResponse = await CompareFaces(request);
+
+            // Determine if the face match was successful
+            bool isFaceMatched = compareResponse is OkObjectResult; // Check if the response was OK
+           
+            if (existingRecord != null)
+            {
+                
+                // Update existing record
+                if (isFaceMatched)
+                {
+                    existingRecord.IsPresent = true;
+                    existingRecord.IsAbsent = false;
+                    existingRecord.ConsecutiveMismatches = 0; // Reset on match
+                }
+                else
+                {
+                    existingRecord.ConsecutiveMismatches++;
+
+                    // Check if consecutive mismatches reached 2
+                    if (existingRecord.ConsecutiveMismatches >= 3)
+                    {
+                        existingRecord.IsPresent = false;
+                        existingRecord.IsAbsent = true;
+
+                        _context.AttendanceRecords.Update(existingRecord);
+                        await _context.SaveChangesAsync();
+                        return Ok(new { message = "Absentee Marked" });
+                    }
+                }
+
+                // Update the existing record
+                _context.AttendanceRecords.Update(existingRecord);
+            }
+            else
+            {
+                // Create a new record
+                var newRecord = new Attendance
+                {
+                    UserId = user.Id,
+                    Date = today,
+                    IsPresent = isFaceMatched,
+                    IsAbsent = !isFaceMatched,
+                    ConsecutiveMismatches = isFaceMatched ? 0 : 1 // Set to 1 if face does not match
+                };
+
+                // Add the new record
+                await _context.AttendanceRecords.AddAsync(newRecord);
+            }
+
+           
+                await _context.SaveChangesAsync();
+            
+           
+
+            return Ok(new { message = "Attendance updated successfully." });
+        }
+
+
+        // Compare Faces API
+        [HttpPost("compare")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> CompareFaces([FromBody] CompareRequest request)
+        {
+            // Get the user's email from claims
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            // Find the user by email
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                return Unauthorized("Unable to find the user.");
+            }
+
+            // Define the folder where profile pictures are saved
+            var profileImagePath = Path.Combine(@"C:\FinabitsEmployee", user.ProfilePicturePath);
+
+            // Check if the profile image exists
+            if (!System.IO.File.Exists(profileImagePath))
+            {
+                return NotFound("Profile image not found.");
+            }
+
+            // Decode the base64 image
+            var base64Image = request.Image.Replace("data:image/jpeg;base64,", ""); // Adjust this if your image type is different
+            var webcamImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".jpg");
+
+            // Save the decoded image to a file
+            System.IO.File.WriteAllBytes(webcamImagePath, Convert.FromBase64String(base64Image));
+
+            // Compare the two images: profile image and webcam image
+            var result = _faceRecognitionService.CompareFaces(profileImagePath, webcamImagePath);
+
+            // Clean up the temporary file after comparison
+            System.IO.File.Delete(webcamImagePath);
+
+            if (result)
+            {
+                return Ok(new { message = "Faces match." });
+            }
+
+            return BadRequest(new { message = "Faces do not match." });
+        }
+
+        // Define a class to receive the compare request
+        public class CompareRequest
+        {
+            public string Image { get; set; }
+        }
+
     }
 
 }
