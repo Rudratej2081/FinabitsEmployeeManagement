@@ -20,6 +20,8 @@ public class AdminController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
+    private readonly FaceRecognitionService _faceRecognitionService;
+
 
     public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, AppDbContext appDb)
     {
@@ -27,6 +29,7 @@ public class AdminController : ControllerBase
         _roleManager = roleManager;
         _configuration = configuration;
         _context = appDb;
+        _faceRecognitionService = new FaceRecognitionService();
     }
 
     [Authorize(Roles = "Admin")]
@@ -71,7 +74,7 @@ public class AdminController : ControllerBase
             }
 
             // Assign file path to profile picture
-            profilePictureFilePath = $"uploads/{uniqueFileName}";
+            profilePictureFilePath = $"{uniqueFileName}";
         }
 
         // Create the new employee (ApplicationUser)
@@ -377,8 +380,11 @@ public class AdminController : ControllerBase
 
         return Ok(new { message = "Leave request status updated successfully." });
     }
+    
 
 }
+
+
 
 
 

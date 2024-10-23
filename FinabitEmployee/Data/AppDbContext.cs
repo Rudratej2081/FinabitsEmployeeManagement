@@ -13,6 +13,7 @@ namespace firstproj.Models.Entity
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<CheckInOutRecord> checkincheckouts { get; set; }
         public DbSet<DailyActivity> DailyActivities { get; set; }
+        public DbSet<Attendance> AttendanceRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,7 +23,17 @@ namespace firstproj.Models.Entity
             
             modelBuilder.Entity<LeaveRequest>()
                 .Property(lr => lr.Status)
-                .HasConversion<int>(); 
+                .HasConversion<int>();
+           
+
+            modelBuilder.Entity<Attendance>()
+                .HasIndex(a => new { a.UserId, a.Date }) 
+                .IsUnique(); 
+
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.AttendanceRecords)
+                .HasForeignKey(a => a.UserId);
         }
     }
 }
