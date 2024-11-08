@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using firstproj.Models.Entity;
 
@@ -11,9 +12,11 @@ using firstproj.Models.Entity;
 namespace FinabitEmployee.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241024062827_chatsystemadded")]
+    partial class chatsystemadded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,6 +108,23 @@ namespace FinabitEmployee.Migrations
                     b.ToTable("DailyActivities");
                 });
 
+            modelBuilder.Entity("FinabitEmployee.Data.Group", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Group");
+                });
+
             modelBuilder.Entity("FinabitEmployee.Data.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -116,6 +136,12 @@ namespace FinabitEmployee.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsGroupChat")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("ReceiverId")
                         .IsRequired()
@@ -129,6 +155,8 @@ namespace FinabitEmployee.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("SenderId");
 
@@ -163,6 +191,9 @@ namespace FinabitEmployee.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -213,6 +244,8 @@ namespace FinabitEmployee.Migrations
                         .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -402,13 +435,26 @@ namespace FinabitEmployee.Migrations
 
             modelBuilder.Entity("FinabitEmployee.Data.Message", b =>
                 {
+                    b.HasOne("FinabitEmployee.Data.Group", "Group")
+                        .WithMany("Messages")
+                        .HasForeignKey("GroupId");
+
                     b.HasOne("FinabitEmployee.Models.ApplicationUser", "Sender")
                         .WithMany("Messages")
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Group");
+
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("FinabitEmployee.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("FinabitEmployee.Data.Group", null)
+                        .WithMany("Users")
+                        .HasForeignKey("GroupId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -460,6 +506,13 @@ namespace FinabitEmployee.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FinabitEmployee.Data.Group", b =>
+                {
+                    b.Navigation("Messages");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("FinabitEmployee.Models.ApplicationUser", b =>

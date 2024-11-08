@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,11 +93,15 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+builder.Services.AddSignalR();
+
 
 // Add AdminInitializer to the services
 builder.Services.AddTransient<AdminInitializer>();
 
 var app = builder.Build();
+
+
 
 // Initialize admin user during application startup
 using (var scope = app.Services.CreateScope())
@@ -117,6 +122,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+var options = new JsonSerializerOptions
+{
+    MaxDepth = 64, // Increase as needed
+};
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -128,6 +137,7 @@ else
     app.UseHsts();
 }
 
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors("AllowAllOrigins");
@@ -136,7 +146,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<ChatHub>("/chatHub");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
