@@ -14,6 +14,7 @@ namespace firstproj.Models.Entity
         public DbSet<CheckInOutRecord> checkincheckouts { get; set; }
         public DbSet<DailyActivity> DailyActivities { get; set; }
         public DbSet<Attendance> AttendanceRecords { get; set; }
+        public DbSet<Message> messages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -17,6 +17,7 @@ namespace FinabitEmployee.Models
         public string Password {  get; set; }
 
         public virtual ICollection<Attendance> AttendanceRecords { get; set; }
+        public ICollection<Message> Messages { get; set; }
         public string? ProfilePicturePath { get; set; }
     }
     public class Application : ApplicationUser

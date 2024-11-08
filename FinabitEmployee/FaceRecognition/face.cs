@@ -9,9 +9,9 @@ public class FaceRecognitionService
 
     public FaceRecognitionService()
     {
-        string classifierPath = @"D:\Finabits Employee ManagementApp\FinabitEmployee\FaceRecognitionResources\Resources\haarcascade_frontalface_default.xml";
+        string faceCascadePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Resources", "haarcascade_frontalface_default.xml");
 
-        _faceDetector = new CascadeClassifier(classifierPath);
+        _faceDetector = new CascadeClassifier(faceCascadePath);
     }
 
     public bool CompareFaces(string imagePath1, string imagePath2)
