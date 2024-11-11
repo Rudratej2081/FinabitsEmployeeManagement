@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using firstproj.Models.Entity;
 
@@ -11,9 +12,11 @@ using firstproj.Models.Entity;
 namespace FinabitEmployee.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241109062035_changesColumnDataType")]
+    partial class changesColumnDataType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,15 +152,7 @@ namespace FinabitEmployee.Migrations
                     b.Property<decimal>("Deductions")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -167,19 +162,11 @@ namespace FinabitEmployee.Migrations
                     b.Property<decimal>("HRA")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<int>("Month")
                         .HasColumnType("int");
 
                     b.Property<decimal>("NetPay")
                         .HasColumnType("decimal(65,30)");
-
-                    b.Property<string>("Phonenumber")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
@@ -246,8 +233,11 @@ namespace FinabitEmployee.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("PhoneNumber")
+                    b.Property<string>("Phone")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("longtext");
 
                     b.Property<bool>("PhoneNumberConfirmed")

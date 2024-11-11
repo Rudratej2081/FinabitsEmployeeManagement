@@ -34,10 +34,11 @@ public class AdminInitializer
                 UserName = adminEmail,
                 Email = adminEmail,
                 DateOfJoining = DateTime.Now,
-                Password=adminPassword,
-                Phone = "234567111",
-                Designation ="Manager",
-                ProfilePicturePath="null",
+                Password = adminPassword,
+                PhoneNumber = "234567111",
+                Designation = "Manager",
+                ProfilePicturePath = "null",
+                CTC = 0,
                 EmailConfirmed = true
 
             };

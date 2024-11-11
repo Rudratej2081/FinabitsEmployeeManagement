@@ -84,11 +84,12 @@ public class AdminController : ControllerBase
             Email = model.Email,
             FirstName = model.FirstName,
             LastName = model.LastName,
-            Phone = model.Phone,
+            PhoneNumber = model.Phone,
             Password = model.Password, 
             Designation = model.Designation,
             DateOfJoining = model.DateOfJoining,
-            ProfilePicturePath = profilePictureFilePath 
+            ProfilePicturePath = profilePictureFilePath,
+            CTC=model.CTC
         };
 
         // Create the user and assign the role
@@ -128,7 +129,7 @@ public class AdminController : ControllerBase
                 user.Email,
                 user.FirstName,
                 user.LastName,
-                user.Phone,
+                user.PhoneNumber,
                 user.DateOfJoining,
                 user.Designation
             })
@@ -253,7 +254,7 @@ public class AdminController : ControllerBase
         if (!string.IsNullOrEmpty(model.FirstName)) user.FirstName = model.FirstName;
         if (!string.IsNullOrEmpty(model.LastName)) user.LastName = model.LastName;
         if (!string.IsNullOrEmpty(model.Email)) user.Email = model.Email;
-        if (!string.IsNullOrEmpty(model.Phone)) user.Phone = model.Phone;
+        if (!string.IsNullOrEmpty(model.Phone)) user.PhoneNumber = model.Phone;
         if (!string.IsNullOrEmpty(model.Designation)) user.Designation = model.Designation;
 
         // Handle profile picture if provided
