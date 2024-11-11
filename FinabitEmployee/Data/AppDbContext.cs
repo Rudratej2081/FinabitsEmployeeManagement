@@ -4,6 +4,7 @@ using FinabitEmployee.Migrations;
 using FinabitEmployee.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace firstproj.Models.Entity
 {
@@ -15,6 +16,8 @@ namespace firstproj.Models.Entity
         public DbSet<DailyActivity> DailyActivities { get; set; }
         public DbSet<Attendance> AttendanceRecords { get; set; }
         public DbSet<Message> messages { get; set; }
+
+        public DbSet<SalarySlip>salarySlips { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
