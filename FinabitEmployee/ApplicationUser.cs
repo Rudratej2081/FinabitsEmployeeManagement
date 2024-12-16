@@ -11,6 +11,7 @@ namespace FinabitEmployee.Models
       
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
         public DateTime DateOfJoining { get; set; }
 
         public decimal  CTC { get; set; }
