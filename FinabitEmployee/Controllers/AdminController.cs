@@ -181,32 +181,34 @@ public class AdminController : ControllerBase
             return BadRequest("Invalid login request.");
         }
 
-
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null)
         {
             return Unauthorized("Invalid email or password.");
         }
 
-        
         var passwordCheck = await _userManager.CheckPasswordAsync(user, loginDto.Password);
         if (!passwordCheck)
         {
             return Unauthorized("Invalid email or password.");
         }
 
-  
         var roles = await _userManager.GetRolesAsync(user);
         if (roles == null || !roles.Any())
         {
             return Unauthorized("No roles assigned to the user.");
         }
 
-        
         var token = GenerateJwtToken(user, roles);
 
-        return Ok(new { Token = token });
+        return Ok(new
+        {
+            id = user.Id,
+            token = token,
+            role = roles.FirstOrDefault()
+        });
     }
+
 
     private string GenerateJwtToken(ApplicationUser user, IList<string> roles)
     {
